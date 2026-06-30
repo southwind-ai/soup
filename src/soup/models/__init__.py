@@ -1,5 +1,5 @@
 """Data models for Soup."""
 
-from soup.models.harness import Harness
+from soup.models.skill import Skill
 
-__all__ = ["Harness"]
+__all__ = ["Skill"]

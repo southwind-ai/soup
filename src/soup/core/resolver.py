@@ -1,37 +1,37 @@
-"""Resolves harness composition (``extends``) and ``dependencies``.
+"""Resolves skill composition (``extends``) and ``dependencies``.
 
-Given a set of selected harnesses, this expands the graph to pull in every
-parent (``extends``) and dependency, transitively, and returns them in a valid
-order: a referenced harness always appears *before* the harness that pulls it
-in. Cycles are detected and broken so resolution always terminates.
+Given a set of selected skills, this expands the graph to pull in every parent
+(``extends``) and dependency, transitively, and returns them in a valid order:
+a referenced skill always appears *before* the skill that pulls it in. Cycles
+are detected and broken so resolution always terminates.
 """
 
 from __future__ import annotations
 
 from soup.core.exceptions import MissingDependencyError
-from soup.models.harness import Harness
-from soup.storage.base import HarnessStorage
+from soup.models.skill import Skill
+from soup.storage.base import SkillStorage
 
 
 class DependencyResolver:
-    """Expands selected harnesses with their parents and dependencies.
+    """Expands selected skills with their parents and dependencies.
 
     Args:
-        storage: Where to look up referenced harnesses.
-        strict: If ``True`` (default), referencing an unregistered harness
-            raises :class:`MissingDependencyError`. If ``False`` the missing
-            reference is skipped.
+        storage: Where to look up referenced skills.
+        strict: If ``True`` (default), referencing an unregistered skill raises
+            :class:`MissingDependencyError`. If ``False`` the missing reference
+            is skipped.
     """
 
-    def __init__(self, storage: HarnessStorage, *, strict: bool = True) -> None:
+    def __init__(self, storage: SkillStorage, *, strict: bool = True) -> None:
         self._storage = storage
         self._strict = strict
 
-    def resolve(self, selected: list[Harness]) -> list[Harness]:
+    def resolve(self, selected: list[Skill]) -> list[Skill]:
         """Return ``selected`` plus all transitive references, dependency-first.
 
         Args:
-            selected: The harnesses chosen by the selection pipeline. Their
+            selected: The skills chosen by the selection pipeline. Their
                 relative order (e.g. by priority) is preserved for roots.
 
         Returns:
@@ -40,30 +40,30 @@ class DependencyResolver:
         Raises:
             MissingDependencyError: If ``strict`` and a reference is unknown.
         """
-        ordered: list[Harness] = []
+        ordered: list[Skill] = []
         done: set[str] = set()
         on_stack: set[str] = set()
 
-        def visit(harness: Harness) -> None:
-            if harness.name in done:
+        def visit(skill: Skill) -> None:
+            if skill.name in done:
                 return
-            if harness.name in on_stack:
-                # Cycle: the harness is already being resolved upstream, so it
+            if skill.name in on_stack:
+                # Cycle: the skill is already being resolved upstream, so it
                 # will be appended once that frame completes. Break here.
                 return
-            on_stack.add(harness.name)
-            for ref in harness.references:
+            on_stack.add(skill.name)
+            for ref in skill.references:
                 referenced = self._storage.get(ref)
                 if referenced is None:
                     if self._strict:
-                        raise MissingDependencyError(harness.name, ref)
+                        raise MissingDependencyError(skill.name, ref)
                     continue
                 visit(referenced)
-            on_stack.discard(harness.name)
-            if harness.name not in done:
-                done.add(harness.name)
-                ordered.append(harness)
+            on_stack.discard(skill.name)
+            if skill.name not in done:
+                done.add(skill.name)
+                ordered.append(skill)
 
-        for harness in selected:
-            visit(harness)
+        for skill in selected:
+            visit(skill)
         return ordered

@@ -1,6 +1,6 @@
 # Soup examples
 
-Each example shares the same harness catalog defined in [`common.py`](./common.py),
+Each example shares the same skill catalog defined in [`common.py`](./common.py),
 which demonstrates composition (`nextjs` → `react` → `frontend`) and dependencies
 (`sql` → `security`).
 

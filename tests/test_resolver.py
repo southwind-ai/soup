@@ -4,82 +4,86 @@ from __future__ import annotations
 
 import pytest
 
-from soup import DependencyResolver, Harness, InMemoryStorage, MissingDependencyError
+from soup import DependencyResolver, InMemoryStorage, MissingDependencyError, Skill
 
 
-def _storage(*harnesses: Harness) -> InMemoryStorage:
+def _skill(name: str, **kwargs: object) -> Skill:
+    return Skill(name=name, description="d", instructions="i", **kwargs)  # type: ignore[arg-type]
+
+
+def _storage(*skills: Skill) -> InMemoryStorage:
     s = InMemoryStorage()
-    for h in harnesses:
-        s.add(h)
+    for skill in skills:
+        s.add(skill)
     return s
 
 
 def test_no_references_returns_input() -> None:
-    a = Harness(name="a", instructions="i")
+    a = _skill("a")
     resolver = DependencyResolver(_storage(a))
     assert resolver.resolve([a]) == [a]
 
 
 def test_extends_included_parent_first() -> None:
-    frontend = Harness(name="frontend", instructions="i")
-    react = Harness(name="react", instructions="i", extends=["frontend"])
+    frontend = _skill("frontend")
+    react = _skill("react", extends=["frontend"])
     resolver = DependencyResolver(_storage(frontend, react))
     out = resolver.resolve([react])
-    assert [h.name for h in out] == ["frontend", "react"]
+    assert [s.name for s in out] == ["frontend", "react"]
 
 
 def test_nested_extends() -> None:
-    frontend = Harness(name="frontend", instructions="i")
-    react = Harness(name="react", instructions="i", extends=["frontend"])
-    nextjs = Harness(name="nextjs", instructions="i", extends=["react"])
+    frontend = _skill("frontend")
+    react = _skill("react", extends=["frontend"])
+    nextjs = _skill("nextjs", extends=["react"])
     resolver = DependencyResolver(_storage(frontend, react, nextjs))
     out = resolver.resolve([nextjs])
-    assert [h.name for h in out] == ["frontend", "react", "nextjs"]
+    assert [s.name for s in out] == ["frontend", "react", "nextjs"]
 
 
 def test_dependencies_included() -> None:
-    design = Harness(name="design-system", instructions="i")
-    frontend = Harness(name="frontend", instructions="i", dependencies=["design-system"])
+    design = _skill("design-system")
+    frontend = _skill("frontend", dependencies=["design-system"])
     resolver = DependencyResolver(_storage(design, frontend))
     out = resolver.resolve([frontend])
-    assert [h.name for h in out] == ["design-system", "frontend"]
+    assert [s.name for s in out] == ["design-system", "frontend"]
 
 
 def test_deduplicates_shared_dependency() -> None:
-    base = Harness(name="base", instructions="i")
-    a = Harness(name="a", instructions="i", extends=["base"])
-    b = Harness(name="b", instructions="i", extends=["base"])
+    base = _skill("base")
+    a = _skill("a", extends=["base"])
+    b = _skill("b", extends=["base"])
     resolver = DependencyResolver(_storage(base, a, b))
     out = resolver.resolve([a, b])
-    assert [h.name for h in out] == ["base", "a", "b"]
+    assert [s.name for s in out] == ["base", "a", "b"]
 
 
 def test_direct_cycle_terminates() -> None:
-    a = Harness(name="a", instructions="i", extends=["b"])
-    b = Harness(name="b", instructions="i", extends=["a"])
+    a = _skill("a", extends=["b"])
+    b = _skill("b", extends=["a"])
     resolver = DependencyResolver(_storage(a, b))
     out = resolver.resolve([a])
-    assert {h.name for h in out} == {"a", "b"}
+    assert {s.name for s in out} == {"a", "b"}
 
 
 def test_self_cycle_terminates() -> None:
-    a = Harness(name="a", instructions="i", dependencies=["a"])
+    a = _skill("a", dependencies=["a"])
     resolver = DependencyResolver(_storage(a))
     out = resolver.resolve([a])
-    assert [h.name for h in out] == ["a"]
+    assert [s.name for s in out] == ["a"]
 
 
 def test_missing_reference_strict_raises() -> None:
-    a = Harness(name="a", instructions="i", dependencies=["ghost"])
+    a = _skill("a", dependencies=["ghost"])
     resolver = DependencyResolver(_storage(a), strict=True)
     with pytest.raises(MissingDependencyError) as exc:
         resolver.resolve([a])
     assert exc.value.missing == "ghost"
-    assert exc.value.harness_name == "a"
+    assert exc.value.skill_name == "a"
 
 
 def test_missing_reference_lenient_skips() -> None:
-    a = Harness(name="a", instructions="i", dependencies=["ghost"])
+    a = _skill("a", dependencies=["ghost"])
     resolver = DependencyResolver(_storage(a), strict=False)
     out = resolver.resolve([a])
-    assert [h.name for h in out] == ["a"]
+    assert [s.name for s in out] == ["a"]

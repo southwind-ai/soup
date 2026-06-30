@@ -9,22 +9,37 @@ from __future__ import annotations
 import math
 from collections import Counter
 
-from soup.models.harness import Harness
+from soup.models.skill import Skill
 from soup.strategies.base import SelectionStrategy
 from soup.utils.text import tokenize_list
 
+#: Stopwords removed during BM25 scoring.
+_STOPWORDS = frozenset(
+    {
+        "a", "an", "and", "are", "as", "at", "be", "but", "by", "can", "do",
+        "for", "from", "how", "i", "in", "into", "is", "it", "its", "me", "my",
+        "of", "on", "or", "that", "the", "their", "then", "this", "to", "use",
+        "used", "using", "want", "wants", "was", "what", "when", "which", "will",
+        "with", "you", "your",
+    }
+)
+
+
+def _content_terms(text: str) -> list[str]:
+    """Tokenize ``text`` and drop stopwords (selection-only filtering)."""
+    return [term for term in tokenize_list(text) if term not in _STOPWORDS]
+
 
 class BM25Strategy(SelectionStrategy):
-    """Select harnesses using BM25 ranking over semantic harness text.
+    """Select skills with BM25 over routing metadata.
 
-    Each harness is projected to a deterministic textual document built from
-    meaningful fields: ``name``, ``description``, ``tags``, ``instructions``,
-    and ``examples``.
+    Searchable text is ``name`` + ``description`` + ``tags``.
 
     Args:
-        top_k: Maximum number of harnesses to return. ``None`` keeps all
-            harnesses with positive score.
-        min_score: Minimum BM25 score required for a harness to be selected.
+        top_k: Maximum number of skills to return. ``None`` keeps all skills
+            scoring at least ``min_score``.
+        min_score: Minimum BM25 score required for a skill to be selected.
+            Defaults to ``1.5``.
         k1: BM25 term-frequency saturation parameter.
         b: BM25 length normalization parameter.
     """
@@ -33,7 +48,7 @@ class BM25Strategy(SelectionStrategy):
         self,
         *,
         top_k: int | None = None,
-        min_score: float = 0.0,
+        min_score: float = 1.5,
         k1: float = 0.9,
         b: float = 0.4,
     ) -> None:
@@ -54,21 +69,21 @@ class BM25Strategy(SelectionStrategy):
         self._k1 = k1
         self._b = b
 
-    def _searchable_text(self, harness: Harness) -> str:
-        parts = [harness.name]
-        if harness.description:
-            parts.append(harness.description)
-        parts.extend(harness.tags)
-        parts.append(harness.instructions)
-        parts.extend(harness.examples)
+    def _searchable_text(self, skill: Skill) -> str:
+        parts = [skill.name, skill.description]
+        parts.extend(skill.tags)
         return "\n".join(parts)
 
-    def select(self, query: str, harnesses: list[Harness]) -> list[Harness]:
-        query_terms = tokenize_list(query)
-        if not query_terms or not harnesses:
+    def select(self, query: str, skills: list[Skill]) -> list[Skill]:
+        return [skill for skill, _ in self.rank(query, skills)]
+
+    def rank(self, query: str, skills: list[Skill]) -> list[tuple[Skill, float]]:
+        """Return ``(skill, score)`` pairs, highest score first."""
+        query_terms = _content_terms(query)
+        if not query_terms or not skills:
             return []
 
-        documents = [tokenize_list(self._searchable_text(h)) for h in harnesses]
+        documents = [_content_terms(self._searchable_text(s)) for s in skills]
         lengths = [len(doc) for doc in documents]
         total_length = sum(lengths)
         if total_length == 0:
@@ -85,9 +100,9 @@ class BM25Strategy(SelectionStrategy):
         n_docs = len(documents)
         query_tf = Counter(query_terms)
 
-        scored: list[tuple[float, int, Harness]] = []
-        zipped = zip(harnesses, documents, lengths, strict=False)
-        for idx, (harness, doc_tokens, dl) in enumerate(zipped):
+        scored: list[tuple[float, int, Skill]] = []
+        zipped = zip(skills, documents, lengths, strict=False)
+        for idx, (skill, doc_tokens, dl) in enumerate(zipped):
             if dl == 0:
                 continue
             tf = Counter(doc_tokens)
@@ -103,10 +118,10 @@ class BM25Strategy(SelectionStrategy):
                 score += idf * ((term_tf * (self._k1 + 1)) / (term_tf + norm)) * qtf
 
             if score > 0 and score >= self._min_score:
-                scored.append((score, idx, harness))
+                scored.append((score, idx, skill))
 
         scored.sort(key=lambda item: (-item[0], item[1]))
-        selected = [h for _, _, h in scored]
+        ranked = [(skill, score) for score, _, skill in scored]
         if self._top_k is not None:
-            return selected[: self._top_k]
-        return selected
+            return ranked[: self._top_k]
+        return ranked

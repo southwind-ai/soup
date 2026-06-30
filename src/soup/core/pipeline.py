@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from soup.models.harness import Harness
+from soup.models.skill import Skill
 from soup.strategies.base import SelectionStrategy
 
 
 class SelectionPipeline:
     """Runs an ordered list of strategies and **unions** their results.
 
-    A harness is selected if *any* strategy selects it; the first occurrence
+    A skill is selected if *any* strategy selects it; the first occurrence
     determines its position, so the pipeline is deterministic. Union (rather
     than chained filtering) is used so that complementary signals -- e.g. an
     exact tag match and a fuzzy keyword match -- add recall instead of fighting
@@ -31,13 +31,13 @@ class SelectionPipeline:
         """Append ``strategy`` to the end of the pipeline."""
         self._strategies.append(strategy)
 
-    def select(self, query: str, harnesses: list[Harness]) -> list[Harness]:
+    def select(self, query: str, skills: list[Skill]) -> list[Skill]:
         """Return the union of every strategy's selection, de-duplicated."""
         seen: set[str] = set()
-        selected: list[Harness] = []
+        selected: list[Skill] = []
         for strategy in self._strategies:
-            for harness in strategy.select(query, harnesses):
-                if harness.name not in seen:
-                    seen.add(harness.name)
-                    selected.append(harness)
+            for skill in strategy.select(query, skills):
+                if skill.name not in seen:
+                    seen.add(skill.name)
+                    selected.append(skill)
         return selected

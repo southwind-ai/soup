@@ -20,7 +20,7 @@ def main() -> None:
 
     messages = [{"role": "user", "content": "Build a React button with Tailwind"}]
 
-    # Inject only the relevant harnesses (frontend + react) as a system message.
+    # Inject only the relevant skills (frontend + react) as a system message.
     prepared = soup.prepare(messages)
 
     response = client.chat.completions.create(model="gpt-4o-mini", messages=prepared)

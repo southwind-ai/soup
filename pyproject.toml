@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "soup-ai"
-version = "0.1.0"
-description = "Soup is a provider-agnostic context router for LLMs: define many small harnesses and inject only the relevant ones into each call."
+version = "0.2.0"
+description = "Soup is a spec-compliant Agent Skills router for LLMs with deterministic BM25 routing: define many small skills and inject only the relevant ones into each call."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "Soup Contributors" }]
-keywords = ["llm", "context", "prompt", "router", "openai", "anthropic"]
+keywords = ["llm", "context", "prompt", "router", "skills", "agent-skills", "openai", "anthropic"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Typing :: Typed",
 ]
-dependencies = ["pydantic>=2.6,<3"]
+dependencies = ["pydantic>=2.6,<3", "pyyaml>=6.0"]
 
 [project.optional-dependencies]
 dev = [
@@ -27,6 +27,8 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.6",
     "mypy>=1.11",
+    "basedpyright>=1.18",
+    "types-pyyaml>=6.0",
 ]
 
 [project.urls]
@@ -64,6 +66,11 @@ strict = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 files = ["src/soup"]
+
+[tool.basedpyright]
+include = ["src/soup"]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

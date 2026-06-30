@@ -10,23 +10,23 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from soup.models.harness import Harness
+from soup.models.skill import Skill
 
 
 class SelectionStrategy(ABC):
-    """Selects the harnesses relevant to a request.
+    """Selects the skills relevant to a request.
 
     Implementations must be side-effect free and must not mutate their inputs.
     """
 
     @abstractmethod
-    def select(self, query: str, harnesses: list[Harness]) -> list[Harness]:
-        """Return the subset of ``harnesses`` relevant to ``query``.
+    def select(self, query: str, skills: list[Skill]) -> list[Skill]:
+        """Return the subset of ``skills`` relevant to ``query``.
 
         Args:
             query: The user request text driving the selection.
-            harnesses: The candidate harnesses to choose from.
+            skills: The candidate skills to choose from.
 
         Returns:
-            The selected harnesses (a subset of ``harnesses``).
+            The selected skills (a subset of ``skills``).
         """

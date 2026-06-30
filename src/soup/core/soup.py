@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from pathlib import Path
 from typing import Any, overload
 
 from soup.builders.base import ContextBuilder
@@ -10,41 +11,49 @@ from soup.builders.markdown import MarkdownContextBuilder
 from soup.core.messages import Messages, extract_query, inject_context
 from soup.core.pipeline import SelectionPipeline
 from soup.core.resolver import DependencyResolver
-from soup.models.harness import Harness
-from soup.storage.base import HarnessStorage
+from soup.models.skill import Skill
+from soup.sources.local import is_skill_dir, load_skill_dir, load_skills_collection
+from soup.sources.remote import is_remote_url, load_remote
+from soup.storage.base import SkillStorage
 from soup.storage.memory import InMemoryStorage
 from soup.strategies.base import SelectionStrategy
 from soup.strategies.bm25 import BM25Strategy
 
 
 class Soup:
-    """A provider-agnostic context router for LLMs.
+    """A provider-agnostic Agent Skills router for LLMs.
 
-    Register many small harnesses, then call :meth:`prepare` on whatever you
-    already send to your LLM; Soup injects only the relevant context.
+    Register many small skills -- defined in code or loaded from ``SKILL.md``
+    files (locally or from a GitHub/GitLab repo) -- then call :meth:`prepare` on
+    whatever you already send to your LLM; Soup injects only the relevant skill
+    instructions.
 
     All collaborators are injected and default to sensible implementations, so
     the zero-config path just works while every part stays replaceable::
 
         soup = Soup()
-        soup.register(name="frontend", tags=["react"], instructions="Use React 19.")
+        soup.register(
+            name="frontend",
+            description="Frontend guidance. Use for UI work.",
+            instructions="Use React 19.",
+        )
         messages = soup.prepare(user_messages)
 
     Args:
-        storage: Backend holding the harnesses. Defaults to in-memory.
+        storage: Backend holding the skills. Defaults to in-memory.
         pipeline: A pre-built selection pipeline. If omitted, one is created
             from ``strategies``.
         strategies: Strategies for the default pipeline. Defaults to a BM25
             strategy. Ignored if ``pipeline`` is given.
-        builder: Renders selected harnesses. Defaults to Markdown.
-        strict_dependencies: Raise if a harness references an unknown one.
+        builder: Renders selected skills. Defaults to Markdown.
+        strict_dependencies: Raise if a skill references an unknown one.
         system_role: Role used when injecting context into chat messages.
     """
 
     def __init__(
         self,
         *,
-        storage: HarnessStorage | None = None,
+        storage: SkillStorage | None = None,
         pipeline: SelectionPipeline | None = None,
         strategies: Sequence[SelectionStrategy] | None = None,
         builder: ContextBuilder | None = None,
@@ -64,66 +73,161 @@ class Soup:
     # -- registration -----------------------------------------------------
 
     @overload
-    def register(self, harness: Harness, /) -> Harness: ...
+    def register(self, skill: Skill, /) -> Skill: ...
 
     @overload
     def register(
         self,
         *,
         name: str,
+        description: str,
         instructions: str,
-        description: str | None = ...,
-        tags: Sequence[str] = ...,
-        examples: Sequence[str] = ...,
+        license: str | None = ...,
+        compatibility: str | None = ...,
+        allowed_tools: Sequence[str] | str = ...,
+        metadata: Mapping[str, Any] | None = ...,
+        tags: Sequence[str] | str = ...,
+        examples: Sequence[str] | str = ...,
         priority: int = ...,
-        dependencies: Sequence[str] = ...,
-        extends: Sequence[str] = ...,
+        dependencies: Sequence[str] | str = ...,
+        extends: Sequence[str] | str = ...,
         version: str | None = ...,
-        metadata: dict[str, Any] | None = ...,
-    ) -> Harness: ...
+    ) -> Skill: ...
 
-    def register(self, harness: Harness | None = None, **fields: Any) -> Harness:
-        """Register a harness, from an instance or keyword fields.
+    @overload
+    def register(
+        self,
+        source: str | Path,
+        /,
+        *,
+        ref: str | None = ...,
+        options: Mapping[str, Mapping[str, Any]] | None = ...,
+        version: str | None = ...,
+        priority: int = ...,
+        tags: Sequence[str] | str = ...,
+        examples: Sequence[str] | str = ...,
+        dependencies: Sequence[str] | str = ...,
+        extends: Sequence[str] | str = ...,
+        license: str | None = ...,
+        compatibility: str | None = ...,
+        allowed_tools: Sequence[str] | str = ...,
+        metadata: Mapping[str, Any] | None = ...,
+    ) -> Skill | list[Skill]: ...
 
-        Args:
-            harness: A pre-built :class:`Harness` (positional).
-            **fields: Field values forwarded to :class:`Harness` if no instance
-                is given.
+    def register(
+        self,
+        source: Skill | str | Path | None = None,
+        *,
+        ref: str | None = None,
+        options: Mapping[str, Mapping[str, Any]] | None = None,
+        **fields: Any,
+    ) -> Skill | list[Skill]:
+        """Register one or more skills, dispatching on the shape of ``source``.
+
+        The single entry point handles every supported source:
+
+        * **Keyword fields** (no ``source``) define a skill in code; ``name``,
+          ``description`` and ``instructions`` are required::
+
+              soup.register(name="pdf", description="...", instructions="...")
+
+        * **A :class:`Skill` instance** is registered as-is.
+        * **A local skill directory** (contains ``SKILL.md``) loads one skill;
+          extra keyword fields override its ``metadata``::
+
+              soup.register("./skills/pdf-processing", dependencies=["files"])
+
+        * **A local skills collection** (a folder of skill directories) loads
+          all of them; use ``options`` for per-skill overrides::
+
+              soup.register("./skills", options={"pdf-processing": {"priority": 10}})
+
+        * **A GitHub/GitLab repository URL** loads skills from ``/skills``;
+          pick a branch/tag/commit with ``ref`` and override with ``options``::
+
+              soup.register("https://github.com/vercel-labs/skills", ref="main")
 
         Returns:
-            The registered harness.
+            The registered skill (single sources) or the list of registered
+            skills (collections and remote repositories).
 
         Raises:
-            ValueError: If both a harness instance and fields are supplied.
+            ValueError: If incompatible arguments are combined.
         """
-        if harness is not None:
-            if fields:
-                msg = "Pass either a Harness instance or keyword fields, not both"
+        if isinstance(source, Skill):
+            if fields or ref is not None or options is not None:
+                msg = "Pass either a Skill instance or keyword fields, not both"
                 raise ValueError(msg)
-            obj = harness
-        else:
+            self._storage.add(source)
+            return source
+
+        if source is None:
+            if ref is not None or options is not None:
+                msg = "'ref' and 'options' are only valid when loading from a source"
+                raise ValueError(msg)
             if fields.get("metadata") is None:
                 fields.pop("metadata", None)
-            obj = Harness(**fields)
-        self._storage.add(obj)
-        return obj
+            skill = Skill(**fields)
+            self._storage.add(skill)
+            return skill
 
-    def register_many(self, harnesses: Iterable[Harness]) -> None:
-        """Register every harness in ``harnesses``."""
-        for harness in harnesses:
-            self._storage.add(harness)
+        return self._register_from_source(source, ref=ref, options=options, overrides=fields)
+
+    def _register_from_source(
+        self,
+        source: str | Path,
+        *,
+        ref: str | None,
+        options: Mapping[str, Mapping[str, Any]] | None,
+        overrides: dict[str, Any],
+    ) -> Skill | list[Skill]:
+        normalized_options = {k: dict(v) for k, v in options.items()} if options else None
+
+        if isinstance(source, str) and is_remote_url(source):
+            self._reject_overrides(overrides, "a remote repository")
+            skills = load_remote(source, ref=ref, options=normalized_options)
+            return self._add_many(skills)
+
+        path = Path(source)
+        if is_skill_dir(path):
+            skill = load_skill_dir(path, overrides=overrides or None)
+            self._storage.add(skill)
+            return skill
+
+        self._reject_overrides(overrides, "a skills collection")
+        skills = load_skills_collection(path, options=normalized_options)
+        return self._add_many(skills)
+
+    @staticmethod
+    def _reject_overrides(overrides: dict[str, Any], source_kind: str) -> None:
+        if overrides:
+            msg = (
+                f"Per-skill keyword overrides are not valid for {source_kind}; "
+                "use 'options={skill_name: {...}}' instead"
+            )
+            raise ValueError(msg)
+
+    def _add_many(self, skills: list[Skill]) -> list[Skill]:
+        for skill in skills:
+            self._storage.add(skill)
+        return skills
+
+    def register_many(self, skills: Iterable[Skill]) -> None:
+        """Register every skill in ``skills``."""
+        for skill in skills:
+            self._storage.add(skill)
 
     def unregister(self, name: str) -> bool:
-        """Remove a harness by name; return whether it existed."""
+        """Remove a skill by name; return whether it existed."""
         return self._storage.remove(name)
 
-    def get(self, name: str) -> Harness | None:
-        """Return a registered harness by name, or ``None``."""
+    def get(self, name: str) -> Skill | None:
+        """Return a registered skill by name, or ``None``."""
         return self._storage.get(name)
 
     @property
-    def harnesses(self) -> list[Harness]:
-        """All registered harnesses."""
+    def skills(self) -> list[Skill]:
+        """All registered skills."""
         return self._storage.all()
 
     # -- configuration ----------------------------------------------------
@@ -134,10 +238,10 @@ class Soup:
 
     # -- selection & rendering -------------------------------------------
 
-    def select(self, query: str) -> list[Harness]:
-        """Select and dependency-resolve the harnesses relevant to ``query``."""
+    def select(self, query: str) -> list[Skill]:
+        """Select and dependency-resolve the skills relevant to ``query``."""
         chosen = self._pipeline.select(query, self._storage.all())
-        chosen.sort(key=lambda h: h.priority, reverse=True)
+        chosen.sort(key=lambda s: s.priority, reverse=True)
         return self._resolver.resolve(chosen)
 
     def build_context(self, query: str) -> str:

@@ -39,7 +39,7 @@ def _text_from_content(content: Any) -> str:
 
 
 def extract_query(payload: str | Messages) -> str:
-    """Derive the text used to drive harness selection.
+    """Derive the text used to drive skill selection.
 
     For a string prompt the whole string is used. For chat messages, the text
     of all ``user`` messages is concatenated (falling back to every message if

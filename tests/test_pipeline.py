@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from soup import Harness, SelectionPipeline, SelectionStrategy
+from soup import SelectionPipeline, SelectionStrategy, Skill
 
 
-def _harnesses() -> list[Harness]:
+def _skills() -> list[Skill]:
     return [
-        Harness(name="frontend", instructions="i", tags=["react"]),
-        Harness(name="sql", instructions="i", tags=["database"]),
+        Skill(name="frontend", description="d", instructions="i", tags=["react"]),
+        Skill(name="sql", description="d", instructions="i", tags=["database"]),
     ]
 
 
@@ -16,27 +16,27 @@ class _NameMatchStrategy(SelectionStrategy):
     def __init__(self, *names: str) -> None:
         self._names = set(names)
 
-    def select(self, query: str, harnesses: list[Harness]) -> list[Harness]:
+    def select(self, query: str, skills: list[Skill]) -> list[Skill]:
         _ = query
-        return [h for h in harnesses if h.name in self._names]
+        return [s for s in skills if s.name in self._names]
 
 
 def test_empty_pipeline_selects_nothing() -> None:
-    assert SelectionPipeline().select("frontend", _harnesses()) == []
+    assert SelectionPipeline().select("frontend", _skills()) == []
 
 
 def test_pipeline_unions_results() -> None:
-    harnesses = _harnesses()
+    skills = _skills()
     pipe = SelectionPipeline([_NameMatchStrategy("frontend"), _NameMatchStrategy("sql")])
-    out = pipe.select("whatever", harnesses)
-    assert {h.name for h in out} == {"frontend", "sql"}
+    out = pipe.select("whatever", skills)
+    assert {s.name for s in out} == {"frontend", "sql"}
 
 
 def test_pipeline_deduplicates() -> None:
-    harnesses = _harnesses()
+    skills = _skills()
     pipe = SelectionPipeline([_NameMatchStrategy("frontend"), _NameMatchStrategy("frontend")])
-    out = pipe.select("whatever", harnesses)
-    assert [h.name for h in out] == ["frontend"]
+    out = pipe.select("whatever", skills)
+    assert [s.name for s in out] == ["frontend"]
 
 
 def test_add_strategy() -> None:

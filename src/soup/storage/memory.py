@@ -2,31 +2,31 @@
 
 from __future__ import annotations
 
-from soup.models.harness import Harness
-from soup.storage.base import HarnessStorage
+from soup.models.skill import Skill
+from soup.storage.base import SkillStorage
 
 
-class InMemoryStorage(HarnessStorage):
-    """Stores harnesses in a plain dict, keyed by name.
+class InMemoryStorage(SkillStorage):
+    """Stores skills in a plain dict, keyed by name.
 
-    Insertion order is preserved, which gives deterministic output for
-    harnesses that are otherwise equal in priority.
+    Insertion order is preserved, which gives deterministic output for skills
+    that are otherwise equal in priority.
     """
 
     def __init__(self) -> None:
-        self._harnesses: dict[str, Harness] = {}
+        self._skills: dict[str, Skill] = {}
 
-    def add(self, harness: Harness) -> None:
-        self._harnesses[harness.name] = harness
+    def add(self, skill: Skill) -> None:
+        self._skills[skill.name] = skill
 
-    def get(self, name: str) -> Harness | None:
-        return self._harnesses.get(name)
+    def get(self, name: str) -> Skill | None:
+        return self._skills.get(name)
 
     def remove(self, name: str) -> bool:
-        return self._harnesses.pop(name, None) is not None
+        return self._skills.pop(name, None) is not None
 
-    def all(self) -> list[Harness]:
-        return list(self._harnesses.values())
+    def all(self) -> list[Skill]:
+        return list(self._skills.values())
 
     def clear(self) -> None:
-        self._harnesses.clear()
+        self._skills.clear()

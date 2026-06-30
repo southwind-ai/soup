@@ -1,6 +1,6 @@
-"""Storage backends for harnesses."""
+"""Storage backends for skills."""
 
-from soup.storage.base import HarnessStorage
+from soup.storage.base import SkillStorage
 from soup.storage.memory import InMemoryStorage
 
-__all__ = ["HarnessStorage", "InMemoryStorage"]
+__all__ = ["InMemoryStorage", "SkillStorage"]
