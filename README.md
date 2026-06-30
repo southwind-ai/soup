@@ -9,7 +9,7 @@ injects **only the harnesses that are actually relevant** to the request.
 Soup is **not** a prompt template engine, an agent framework, a tool runner, or a
 RAG/vector-database. It does exactly one thing, well:
 
-> automatically select the right context to inject into an LLM call.
+> automatically select the right harnesses to inject into an LLM call.
 
 ## Why?
 
@@ -29,7 +29,7 @@ the prompt/messages you already have.
 ## Install
 
 ```bash
-pip install soup-context        # or: uv add soup-context
+pip install soup-ai        # or: uv add soup-ai
 ```
 
 Requires Python 3.12+. The only runtime dependency is `pydantic`.
@@ -86,12 +86,6 @@ A `Harness` is the atomic unit of context.
 | `version`      | `str \| None`     | Version string for sharing/reuse.                  |
 | `metadata`     | `dict[str, Any]`  | Arbitrary user data.                               |
 
-> **Why Pydantic and not `dataclass`?** Pydantic gives us validation at creation
-> time, frozen/immutable instances safe to cache and share, and free, robust
-> serialization (`model_dump`/`model_validate`). That serialization is exactly
-> what makes future YAML / database / Redis storage backends trivial — they just
-> round-trip dicts — so the choice pays for itself in the architecture.
-
 ### Composition & versioning (`extends`)
 
 Harnesses are **composable and versionable**, so you can build hierarchies and
@@ -112,14 +106,13 @@ broken, and missing references raise `MissingDependencyError` (configurable).
 
 ### Selection strategies
 
-Selection is a **pipeline of small strategies** — no embeddings, no vector DB,
-no RAG. Each strategy receives `(query, harnesses)` and returns a subset; the
-pipeline unions the results.
+By default, Soup uses a single built-in selector: **`BM25Strategy`** (no
+embeddings, no vector DB, no RAG).
 
 - `BM25Strategy` — default deterministic lexical ranking over harness text
   (name/description/tags/instructions/examples), no embeddings required.
 
-Add your own:
+If you need custom behavior, you can still add your own strategy:
 
 ```python
 from soup import SelectionStrategy
@@ -131,36 +124,7 @@ class RegexStrategy(SelectionStrategy):
 soup.add_strategy(RegexStrategy())
 ```
 
-### Context builder
-
-The builder renders the resolved harnesses into the injected block. The default
-`MarkdownContextBuilder` is fully configurable (heading level, examples,
-preamble, custom titles); swap it for any `ContextBuilder` to change the format.
-
-### Storage
-
-Storage is abstracted behind `HarnessStorage`. The default is `InMemoryStorage`.
-The interface is designed so filesystem / YAML / database / Redis backends can be
-added **without touching the core**.
-
-## Architecture
-
-```
-src/soup/
-    models/       # Harness (pydantic)
-    storage/      # HarnessStorage (ABC) + InMemoryStorage
-    strategies/   # SelectionStrategy (ABC) + Keyword/Tag/LLMClassifier
-    builders/     # ContextBuilder (ABC) + MarkdownContextBuilder
-    core/         # Soup facade, SelectionPipeline, DependencyResolver, messages
-    utils/        # small text helpers
-tests/
-examples/
-docs/
-```
-
-The design follows SOLID: every collaborator (storage, pipeline, builder) is an
-abstraction injected into `Soup`, with sensible defaults. Extend behavior by
-adding strategies/builders/backends, not by editing the core. No singletons.
+For architecture and design details, see [`docs/architecture.md`](./docs/architecture.md).
 
 ## Examples
 

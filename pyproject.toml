@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "soup-context"
+name = "soup-ai"
 version = "0.1.0"
 description = "Soup is a provider-agnostic context router for LLMs: define many small harnesses and inject only the relevant ones into each call."
 readme = "README.md"
@@ -30,9 +30,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/soup-context/soup"
-Repository = "https://github.com/soup-context/soup"
-Issues = "https://github.com/soup-context/soup/issues"
+Homepage = "https://github.com/southwind-ai/soup"
+Repository = "https://github.com/southwind-ai/soup"
+Issues = "https://github.com/southwind-ai/soup/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/soup"]
