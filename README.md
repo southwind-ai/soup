@@ -116,10 +116,8 @@ Selection is a **pipeline of small strategies** — no embeddings, no vector DB,
 no RAG. Each strategy receives `(query, harnesses)` and returns a subset; the
 pipeline unions the results.
 
-- `KeywordStrategy` — matches words from name/tags/description against the query.
-- `TagStrategy` — matches tags only (precise, low-noise).
-- `LLMClassifierStrategy` — optional; delegates to a callable you provide (which
-  can call any LLM). Soup never imports an SDK.
+- `BM25Strategy` — default deterministic lexical ranking over harness text
+  (name/description/tags/instructions/examples), no embeddings required.
 
 Add your own:
 
@@ -167,7 +165,7 @@ adding strategies/builders/backends, not by editing the core. No singletons.
 ## Examples
 
 See [`examples/`](./examples) for complete, runnable integrations with
-**OpenAI**, **Anthropic**, **LiteLLM** and **Ollama**.
+**OpenAI**, **OpenRouter**, **Anthropic**, **LiteLLM** and **Ollama**.
 
 ## Development
 

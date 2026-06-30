@@ -1,14 +1,9 @@
 """Selection strategies."""
 
 from soup.strategies.base import SelectionStrategy
-from soup.strategies.keyword import KeywordStrategy
-from soup.strategies.llm_classifier import HarnessClassifier, LLMClassifierStrategy
-from soup.strategies.tag import TagStrategy
+from soup.strategies.bm25 import BM25Strategy
 
 __all__ = [
-    "HarnessClassifier",
-    "KeywordStrategy",
-    "LLMClassifierStrategy",
+    "BM25Strategy",
     "SelectionStrategy",
-    "TagStrategy",
 ]

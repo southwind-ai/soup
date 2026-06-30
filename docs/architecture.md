@@ -12,8 +12,7 @@ prepare(payload)
    ├─ extract_query        (core/messages.py)   payload  -> query text
    │
    ├─ SelectionPipeline    (core/pipeline.py)    query    -> selected harnesses
-   │     ├─ KeywordStrategy
-   │     ├─ TagStrategy
+   │     ├─ BM25Strategy (default)
    │     └─ <your strategies>
    │
    ├─ priority sort         (core/soup.py)

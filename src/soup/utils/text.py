@@ -7,6 +7,18 @@ import re
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 
 
+def tokenize_list(text: str) -> list[str]:
+    """Lower-case ``text`` and split it into alphanumeric tokens.
+
+    Args:
+        text: Arbitrary input text.
+
+    Returns:
+        Lowercase tokens in source order (duplicates preserved).
+    """
+    return _TOKEN_RE.findall(text.lower())
+
+
 def tokenize(text: str) -> set[str]:
     """Lower-case ``text`` and split it into a set of alphanumeric tokens.
 
@@ -16,7 +28,7 @@ def tokenize(text: str) -> set[str]:
     Returns:
         The set of distinct lowercase tokens.
     """
-    return set(_TOKEN_RE.findall(text.lower()))
+    return set(tokenize_list(text))
 
 
 def normalize(text: str) -> str:

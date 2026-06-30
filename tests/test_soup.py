@@ -6,12 +6,20 @@ import pytest
 
 from soup import (
     Harness,
-    LLMClassifierStrategy,
     MarkdownContextBuilder,
     SelectionPipeline,
     Soup,
-    TagStrategy,
 )
+from soup.strategies.base import SelectionStrategy
+
+
+class _SelectByName(SelectionStrategy):
+    def __init__(self, *names: str) -> None:
+        self._names = set(names)
+
+    def select(self, query: str, harnesses: list[Harness]) -> list[Harness]:
+        _ = query
+        return [h for h in harnesses if h.name in self._names]
 
 
 def test_register_with_kwargs() -> None:
@@ -94,12 +102,12 @@ def test_add_strategy() -> None:
     soup = Soup(strategies=[])
     soup.register(name="frontend", instructions="i", tags=["react"])
     assert soup.select("react") == []
-    soup.add_strategy(TagStrategy())
+    soup.add_strategy(_SelectByName("frontend"))
     assert [h.name for h in soup.select("react")] == ["frontend"]
 
 
 def test_custom_pipeline() -> None:
-    pipeline = SelectionPipeline([TagStrategy()])
+    pipeline = SelectionPipeline([_SelectByName("frontend")])
     soup = Soup(pipeline=pipeline)
     soup.register(name="frontend", instructions="i", tags=["react"])
     assert [h.name for h in soup.select("react")] == ["frontend"]
@@ -112,8 +120,8 @@ def test_custom_builder() -> None:
     assert out.startswith("## Frontend")
 
 
-def test_llm_classifier_integration() -> None:
-    soup = Soup(strategies=[LLMClassifierStrategy(lambda q, c: ["frontend"])])
+def test_custom_strategy_integration() -> None:
+    soup = Soup(strategies=[_SelectByName("frontend")])
     soup.register(name="frontend", instructions="Use React.")
     soup.register(name="sql", instructions="Use indexes.")
     out = soup.build_context("anything")

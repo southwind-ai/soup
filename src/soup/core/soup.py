@@ -14,8 +14,7 @@ from soup.models.harness import Harness
 from soup.storage.base import HarnessStorage
 from soup.storage.memory import InMemoryStorage
 from soup.strategies.base import SelectionStrategy
-from soup.strategies.keyword import KeywordStrategy
-from soup.strategies.tag import TagStrategy
+from soup.strategies.bm25 import BM25Strategy
 
 
 class Soup:
@@ -35,8 +34,8 @@ class Soup:
         storage: Backend holding the harnesses. Defaults to in-memory.
         pipeline: A pre-built selection pipeline. If omitted, one is created
             from ``strategies``.
-        strategies: Strategies for the default pipeline. Defaults to a keyword
-            and a tag strategy. Ignored if ``pipeline`` is given.
+        strategies: Strategies for the default pipeline. Defaults to a BM25
+            strategy. Ignored if ``pipeline`` is given.
         builder: Renders selected harnesses. Defaults to Markdown.
         strict_dependencies: Raise if a harness references an unknown one.
         system_role: Role used when injecting context into chat messages.
@@ -56,7 +55,7 @@ class Soup:
         if pipeline is not None:
             self._pipeline = pipeline
         else:
-            default = strategies if strategies is not None else [KeywordStrategy(), TagStrategy()]
+            default = strategies if strategies is not None else [BM25Strategy()]
             self._pipeline = SelectionPipeline(list(default))
         self._builder = builder or MarkdownContextBuilder()
         self._resolver = DependencyResolver(self._storage, strict=strict_dependencies)

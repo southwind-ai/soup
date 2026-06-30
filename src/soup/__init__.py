@@ -21,30 +21,24 @@ from soup.core.soup import Soup
 from soup.models.harness import Harness
 from soup.storage import HarnessStorage, InMemoryStorage
 from soup.strategies import (
-    HarnessClassifier,
-    KeywordStrategy,
-    LLMClassifierStrategy,
+    BM25Strategy,
     SelectionStrategy,
-    TagStrategy,
 )
 
 __version__ = "0.1.0"
 
 __all__ = [
+    "BM25Strategy",
     "ContextBuilder",
     "DependencyResolver",
     "Harness",
-    "HarnessClassifier",
     "HarnessStorage",
     "InMemoryStorage",
-    "KeywordStrategy",
-    "LLMClassifierStrategy",
     "MarkdownContextBuilder",
     "MissingDependencyError",
     "SelectionPipeline",
     "SelectionStrategy",
     "Soup",
     "SoupError",
-    "TagStrategy",
     "__version__",
 ]
