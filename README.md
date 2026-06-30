@@ -6,11 +6,6 @@ You define a large number of small, reusable modules called **harnesses** (rules
 best practices, instructions, harnesses for skills). On every LLM call, Soup
 injects **only the harnesses that are actually relevant** to the request.
 
-Soup is **not** a prompt template engine, an agent framework, a tool runner, or a
-RAG/vector-database. It does exactly one thing, well:
-
-> automatically select the right harnesses to inject into an LLM call.
-
 ## Why?
 
 Monolithic system prompts are wasteful and noisy. As your guidelines grow you
@@ -108,9 +103,6 @@ broken, and missing references raise `MissingDependencyError` (configurable).
 
 By default, Soup uses a single built-in selector: **`BM25Strategy`** (no
 embeddings, no vector DB, no RAG).
-
-- `BM25Strategy` — default deterministic lexical ranking over harness text
-  (name/description/tags/instructions/examples), no embeddings required.
 
 If you need custom behavior, you can still add your own strategy:
 
