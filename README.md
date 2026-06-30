@@ -2,16 +2,16 @@
 
 **Soup is a provider-agnostic Agent Skills router for LLMs.**
 
-You define a large number of small, reusable [**Agent Skills**](https://agentskills.io/specification)
-(rules, best practices, instructions) — in code or as `SKILL.md` files. On every
+You define a large number of [**Agent Skills**](https://agentskills.io/specification)
+(rules, best practices, instructions) — in code, as `SKILL.md` files or with remote sources. On every
 LLM call, Soup injects **only the skills that are actually relevant** to the
 request.
 
 ## Why?
 
-Monolithic system prompts are wasteful and noisy. As your guidelines grow you
-end up sending thousands of tokens of `react` rules to a `sql` question. Soup
-fixes that by:
+Monolithic prompts do not scale once your skill catalog spans multiple domains,
+tools, and workflows. Soup routes only the relevant Agent Skills for each
+request, so you do not ship unrelated instruction blocks on every call.
 
 - **Reducing tokens** sent on each call.
 - **Improving context quality** (only relevant instructions).
@@ -39,20 +39,34 @@ from soup import Soup
 soup = Soup()
 
 soup.register(
-    name="frontend",
-    description="Frontend engineering guidance. Use for React, UI, and component work.",
+    name="react-ui",
+    description="React UI implementation patterns. Use for React components, hooks, and layout tasks.",
     instructions="""
-Use React 19.
-Use functional components.
-Never use CSS modules.
+Use React 19 function components.
+Prefer composition and colocated state.
+Keep accessibility semantics in markup.
 """,
+    tags=["react", "ui", "components"],
+)
+
+soup.register(
+    name="sql-postgres",
+    description="Postgres SQL guidance. Use for query design and indexing tasks.",
+    instructions="""
+Use parameterized queries.
+Add indexes for frequent filters.
+Review query plans before optimization.
+""",
+    tags=["sql", "postgres", "database"],
 )
 
 # String prompt in, string prompt out:
-prompt = soup.prepare("Help me build a react button")
+prompt = soup.prepare("I need guidance on building a React dashboard card component with hooks.")
 
 # ...or chat messages in, chat messages out:
-messages = soup.prepare([{"role": "user", "content": "Help me build a react button"}])
+messages = soup.prepare(
+    [{"role": "user", "content": "I need guidance on building a React dashboard card component with hooks."}]
+)
 ```
 
 The integration is meant to be invisible:
