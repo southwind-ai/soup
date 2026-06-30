@@ -10,19 +10,19 @@ def _skills() -> list[Skill]:
         Skill(
             name="frontend",
             instructions="Use React 19 and functional components.",
-            tags=["react", "ui"],
+            tags=("react", "ui"),
             description="Frontend engineering guidance",
         ),
         Skill(
             name="backend",
             instructions="Build HTTP APIs and database integrations.",
-            tags=["api", "server"],
+            tags=("api", "server"),
             description="Backend service design",
         ),
         Skill(
             name="testing",
             instructions="Write pytest unit tests and meaningful integration tests.",
-            tags=["tests", "pytest"],
+            tags=("tests", "pytest"),
             description="Testing and QA best practices",
         ),
     ]

@@ -128,6 +128,7 @@ def test_register_collection_with_options(tmp_path: Path) -> None:
             "data-analysis": {"version": "2.1"},
         },
     )
+    assert isinstance(out, list)
     by_name = {s.name: s for s in out}
     assert by_name["pdf-processing"].dependencies == ("files",)
     assert by_name["pdf-processing"].priority == 10
@@ -183,6 +184,7 @@ def test_register_github_url_with_options(monkeypatch: pytest.MonkeyPatch) -> No
         ref="main",
         options={"pdf-processing": {"priority": 5}},
     )
+    assert isinstance(out, list)
     assert out[0].priority == 5
 
 
@@ -198,6 +200,7 @@ def test_register_gitlab_url(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(remote, "_http_get", lambda url: responses[url])
     soup = Soup()
     out = soup.register("https://gitlab.com/group/project", ref="main")
+    assert isinstance(out, list)
     assert [s.name for s in out] == ["data-analysis"]
 
 

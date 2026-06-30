@@ -7,8 +7,8 @@ from soup import SelectionPipeline, SelectionStrategy, Skill
 
 def _skills() -> list[Skill]:
     return [
-        Skill(name="frontend", description="d", instructions="i", tags=["react"]),
-        Skill(name="sql", description="d", instructions="i", tags=["database"]),
+        Skill(name="frontend", description="d", instructions="i", tags=("react",)),
+        Skill(name="sql", description="d", instructions="i", tags=("database",)),
     ]
 
 

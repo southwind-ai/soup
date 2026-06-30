@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 from pydantic import ValidationError
 
@@ -56,7 +58,13 @@ def test_name_is_stripped() -> None:
 
 
 def test_sequences_accept_lists_and_strings() -> None:
-    s = Skill(name="x", description="d", instructions="i", tags=["a", "b"], extends="parent")
+    s = Skill(
+        name="x",
+        description="d",
+        instructions="i",
+        tags=cast(Any, ["a", "b"]),
+        extends=cast(Any, "parent"),
+    )
     assert s.tags == ("a", "b")
     assert s.extends == ("parent",)
 
@@ -66,9 +74,9 @@ def test_list_fields_split_comma_separated_strings() -> None:
         name="x",
         description="d",
         instructions="i",
-        tags="pdf, forms",
-        dependencies="files,http",
-        extends="base",
+        tags=cast(Any, "pdf, forms"),
+        dependencies=cast(Any, "files,http"),
+        extends=cast(Any, "base"),
     )
     assert s.tags == ("pdf", "forms")
     assert s.dependencies == ("files", "http")
@@ -76,12 +84,17 @@ def test_list_fields_split_comma_separated_strings() -> None:
 
 
 def test_allowed_tools_space_separated_string() -> None:
-    s = Skill(name="x", description="d", instructions="i", allowed_tools="Read Bash Write")
+    s = Skill(name="x", description="d", instructions="i", allowed_tools=cast(Any, "Read Bash Write"))
     assert s.allowed_tools == ("Read", "Bash", "Write")
 
 
 def test_metadata_values_coerced_to_strings() -> None:
-    s = Skill(name="x", description="d", instructions="i", metadata={"version": 1, "k": True})
+    s = Skill(
+        name="x",
+        description="d",
+        instructions="i",
+        metadata=cast(Any, {"version": 1, "k": True}),
+    )
     assert s.metadata == {"version": "1", "k": "True"}
 
 
@@ -90,8 +103,8 @@ def test_references_order_extends_then_dependencies() -> None:
         name="x",
         description="d",
         instructions="i",
-        extends=["base"],
-        dependencies=["dep"],
+        extends=cast(Any, ["base"]),
+        dependencies=cast(Any, ["dep"]),
     )
     assert s.references == ("base", "dep")
 
@@ -122,11 +135,11 @@ def test_roundtrip_serialization() -> None:
         name="x",
         description="d",
         instructions="i",
-        tags=["a"],
+        tags=("a",),
         version="1.0",
         priority=5,
         license="MIT",
-        allowed_tools=["Read"],
+        allowed_tools=("Read",),
     )
     data = s.model_dump()
     restored = Skill.model_validate(data)

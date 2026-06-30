@@ -55,6 +55,7 @@ def test_inject_empty_context_string_unchanged() -> None:
 def test_inject_inserts_system_message() -> None:
     payload = [{"role": "user", "content": "hi"}]
     out = inject_context(payload, "CTX")
+    assert isinstance(out, list)
     assert out[0] == {"role": "system", "content": "CTX"}
     assert out[1] == {"role": "user", "content": "hi"}
 
@@ -65,6 +66,7 @@ def test_inject_merges_existing_system_string() -> None:
         {"role": "user", "content": "hi"},
     ]
     out = inject_context(payload, "CTX")
+    assert isinstance(out, list)
     assert out[0]["content"] == "CTX\n\nbase"
     assert len(out) == 2
 
@@ -72,12 +74,14 @@ def test_inject_merges_existing_system_string() -> None:
 def test_inject_merges_empty_system() -> None:
     payload = [{"role": "system", "content": ""}]
     out = inject_context(payload, "CTX")
+    assert isinstance(out, list)
     assert out[0]["content"] == "CTX"
 
 
 def test_inject_inserts_when_system_content_not_string() -> None:
     payload = [{"role": "system", "content": [{"type": "text", "text": "x"}]}]
     out = inject_context(payload, "CTX")
+    assert isinstance(out, list)
     assert len(out) == 2
     assert out[0] == {"role": "system", "content": "CTX"}
 
@@ -91,6 +95,7 @@ def test_inject_does_not_mutate_input() -> None:
 def test_inject_empty_context_returns_copy() -> None:
     payload = [{"role": "user", "content": "hi"}]
     out = inject_context(payload, "")
+    assert isinstance(out, list)
     assert out == payload
     assert out is not payload
 
@@ -98,4 +103,5 @@ def test_inject_empty_context_returns_copy() -> None:
 def test_inject_custom_system_role() -> None:
     payload = [{"role": "user", "content": "hi"}]
     out = inject_context(payload, "CTX", system_role="developer")
+    assert isinstance(out, list)
     assert out[0]["role"] == "developer"
