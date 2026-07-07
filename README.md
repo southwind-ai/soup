@@ -143,7 +143,7 @@ A `Skill` is the atomic unit of context and follows the Agent Skills spec.
 | `allowed_tools` | spec     | `list[str]`        | Pre-approved tools (`allowed-tools`, experimental).      |
 | `metadata`      | spec     | `dict[str, str]`   | Arbitrary key-value mapping; stores Soup extensions.     |
 | `tags`          | soup     | `list[str]`        | Keywords for tag-aware selection.                        |
-| `examples`      | soup     | `list[str]`        | Optional examples rendered after the instructions.       |
+| `examples`      | soup     | `list[str]`        | "Training phrases" also used for BM25 selection, rendered after the instructions. |
 | `priority`      | soup     | `int`              | Tie-breaker; reserved for future compression.            |
 | `dependencies`  | soup     | `list[str]`        | Skills to always include alongside this one.             |
 | `extends`       | soup     | `list[str]`        | Parent skills this one specializes (composition).        |

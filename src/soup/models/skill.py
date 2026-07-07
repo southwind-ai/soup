@@ -63,6 +63,9 @@ class Skill(BaseModel):
             ``dependencies``, ``extends``, ``priority``, ``tags``).
         tags: Soup field: keywords used by tag-aware selection strategies.
         examples: Soup field: illustrative snippets appended after instructions.
+            Also indexed as "training phrases" by ``BM25Strategy``, so short,
+            realistic user utterances here improve selection recall beyond
+            what ``description``/``tags`` wording alone would match.
         priority: Soup field: relative importance. Higher wins ties and is
             reserved for future context-compression. Defaults to ``0``.
         dependencies: Soup field: names of skills that must be included whenever

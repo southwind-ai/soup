@@ -50,3 +50,41 @@ def test_bm25_min_score_filters_weak_matches() -> None:
 
 def test_bm25_empty_query_returns_empty() -> None:
     assert BM25Strategy().select("", _skills()) == []
+
+
+def test_bm25_matches_via_examples_not_description() -> None:
+    """Examples act as training phrases, closing vocabulary gaps.
+
+    Uses a multi-skill corpus (rather than a single skill) since BM25's idf
+    is degenerate over a corpus of one document: every term looks "common"
+    when there is only one document to be rare against.
+    """
+    sql_skill = Skill(
+        name="sql-postgres",
+        description="Postgres SQL guidance for query design and indexing.",
+        instructions="Use parameterized queries.",
+        tags=("sql", "postgres"),
+        examples=("my database is slow, what should I check?",),
+    )
+    other_skill = Skill(
+        name="react-ui",
+        description="React UI implementation patterns for components and hooks.",
+        instructions="Use function components.",
+        tags=("react", "ui"),
+        examples=("help me speed up my website",),
+    )
+    out = BM25Strategy().select(
+        "My database is slow, what should I check?", [sql_skill, other_skill]
+    )
+    assert out == [sql_skill]
+
+
+def test_bm25_ignores_examples_when_absent() -> None:
+    skill = Skill(
+        name="sql-postgres",
+        description="Postgres SQL guidance for query design and indexing.",
+        instructions="Use parameterized queries.",
+        tags=("sql", "postgres"),
+    )
+    out = BM25Strategy().select("My database is slow, what should I check?", [skill])
+    assert out == []

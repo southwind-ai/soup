@@ -72,7 +72,12 @@ def _content_terms(text: str) -> list[str]:
 class BM25Strategy(SelectionStrategy):
     """Select skills with BM25 over routing metadata.
 
-    Searchable text is ``name`` + ``description`` + ``tags``.
+    Searchable text is ``name`` + ``description`` + ``tags`` + ``examples``.
+    ``examples`` acts as a set of "training phrases": short, realistic user
+    utterances that should trigger the skill, letting authors close vocabulary
+    gaps between how they *describe* a skill and how users actually *ask* for
+    it (e.g. a query sharing no words with the description but matching an
+    example almost verbatim).
 
     Args:
         top_k: Maximum number of skills to return. ``None`` keeps all skills
@@ -111,6 +116,7 @@ class BM25Strategy(SelectionStrategy):
     def _searchable_text(self, skill: Skill) -> str:
         parts = [skill.name, skill.description]
         parts.extend(skill.tags)
+        parts.extend(skill.examples)
         return "\n".join(parts)
 
     def select(self, query: str, skills: list[Skill]) -> list[Skill]:
