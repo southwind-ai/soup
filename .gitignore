@@ -7,6 +7,9 @@ build/
 dist/
 uv.lock
 
+# Generated at build time by hatch-vcs
+src/soup/_version.py
+
 # Virtual environments
 .venv/
 venv/

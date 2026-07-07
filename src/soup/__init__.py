@@ -43,7 +43,10 @@ from soup.strategies import (
     SelectionStrategy,
 )
 
-__version__ = "0.2.0"
+try:
+    from soup._version import __version__
+except ImportError:  # pragma: no cover - only missing in unbuilt source checkouts
+    __version__ = "0.0.0.dev0"
 
 __all__ = [
     "BM25Strategy",
