@@ -31,6 +31,17 @@ pip install soup-ai        # or: uv add soup-ai
 
 Requires Python 3.12+. Runtime dependencies are `pydantic` and `pyyaml`.
 
+### Even faster: let your coding agent do it
+
+This repo ships its own Agent Skill, [`skills/integrate-soup`](./skills/integrate-soup),
+that automates the whole setup. Copy the `skills/integrate-soup` directory
+into your project (e.g. Cursor users can drop it into `.cursor/skills/`), then
+ask your agent something like *"use the integrate-soup skill to add Soup to
+this project."* It scans your codebase for where LLM prompts/messages are
+built, drafts a concrete integration plan, and — once you approve it — splits
+your existing prompts into skills and wires `soup.prepare()` into your call
+sites for you.
+
 ## Quickstart
 
 ```python
