@@ -84,7 +84,9 @@ def test_list_fields_split_comma_separated_strings() -> None:
 
 
 def test_allowed_tools_space_separated_string() -> None:
-    s = Skill(name="x", description="d", instructions="i", allowed_tools=cast(Any, "Read Bash Write"))
+    s = Skill(
+        name="x", description="d", instructions="i", allowed_tools=cast(Any, "Read Bash Write")
+    )
     assert s.allowed_tools == ("Read", "Bash", "Write")
 
 

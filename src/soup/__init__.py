@@ -9,10 +9,17 @@ Quickstart:
     >>> soup = Soup()
     >>> _ = soup.register(
     ...     name="frontend",
-    ...     description="Frontend guidance. Use for React/UI work.",
+    ...     description="React UI implementation patterns. Use for React components and hooks.",
     ...     instructions="Use React 19.",
+    ...     tags=["react", "ui"],
     ... )
-    >>> soup.prepare("Build a react button")[:10]
+    >>> _ = soup.register(
+    ...     name="backend",
+    ...     description="Postgres SQL guidance. Use for query design and indexing.",
+    ...     instructions="Use parameterized queries.",
+    ...     tags=["sql", "postgres"],
+    ... )
+    >>> soup.prepare("I need guidance on building a React component with hooks.")[:10]
     '# Frontend'
 """
 

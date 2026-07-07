@@ -222,6 +222,10 @@ V1 loads `SKILL.md` instructions and metadata only. Full Agent Skills support â€
 exposing bundled `scripts/`, `references/`, and `assets/` files to the
 LLM/runtime â€” is tracked as a follow-up.
 
+## Changelog
+
+See [`CHANGELOG.md`](./CHANGELOG.md) for release notes.
+
 ## License
 
 MIT.

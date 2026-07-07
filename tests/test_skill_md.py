@@ -157,9 +157,7 @@ def test_empty_body_raises() -> None:
 
 def test_unexpected_top_level_key_is_ignored() -> None:
     skill = parse_skill_md(
-        _doc(
-            "name: x\ndescription: A skill. Use it.\nversion: '1.0'\nargument-hint: foo"
-        )
+        _doc("name: x\ndescription: A skill. Use it.\nversion: '1.0'\nargument-hint: foo")
     )
     assert skill.name == "x"
 
